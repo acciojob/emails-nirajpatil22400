@@ -1,106 +1,133 @@
 package com.driver;
 
-import java.util.*;
+import org.apache.commons.lang3.tuple.Triple;
+
+import java.util.ArrayList;
+import java.util.Date;
+
+class Emailformate {
+    Date date;
+    String sender;
+    String message;
+
+    //    public EmailTemplate(){
+//
+//    }
+    public Emailformate(Date date, String sender, String message) {
+        this.date = date;
+        this.sender = sender;
+        this.message = message;
+    }
+}
 
 public class Gmail extends Email {
 
     int inboxCapacity; //maximum number of mails inbox can store
-
     //Inbox: Stores mails. Each mail has date (Date), sender (String), message (String). It is guaranteed that message is distinct for all mails.
-    private Queue<Mail> inbox;
     //Trash: Stores mails. Each mail has date (Date), sender (String), message (String)
-    private Queue<Mail> trashMail;
+
+    ArrayList<Emailformate> Inbox;
+    ArrayList<Emailformate> Trash;
+
     public Gmail(String emailId, int inboxCapacity) {
         super(emailId);
         this.inboxCapacity = inboxCapacity;
-        this.inbox  = new LinkedList<>();
-        this.trashMail = new LinkedList<>();
+
+        /* Option 2 Inbox & Trash has been initialized */
+        Inbox = new ArrayList<>();
+        Trash = new ArrayList<>();
+
     }
 
     public void receiveMail(Date date, String sender, String message){
         // If the inbox is full, move the oldest mail in the inbox to trash and add the new mail to inbox.
-        if(this.inbox.size() == this.inboxCapacity){
-            this.trashMail.offer(this.inbox.poll());
-        }
-        this.inbox.offer(new Mail(date,sender,message));
         // It is guaranteed that:
         // 1. Each mail in the inbox is distinct.
         // 2. The mails are received in non-decreasing order. This means that the date of a new mail is greater than equal to the dates of mails received already.
 
+        if(Inbox.size() == inboxCapacity){
+            //Get the firstEmailTemplate
+            Emailformate emailTemplate = Inbox.get(0);
+            Inbox.remove(0); //remove it from Inbox
+            Trash.add(emailTemplate); //add to trash
+        }
+        //add latest email
+        Emailformate emailTemplate = new Emailformate(date, sender , message);
+        Inbox.add(emailTemplate);
+
     }
 
     public void deleteMail(String message){
-        // Each message is distinct
-        // If the given message is found in any mail in the inbox, move the mail to trash, else do nothing
-        if(this.inbox.size() == 0){
-            return;
+        //We have an arrayList of emailTemplate, Find its index : matching message with emailTemplate message
+        Emailformate emailTemplate = null;
+        for(int i=0; i<Inbox.size(); i++){
+            Emailformate emailTemplate1 = Inbox.get(i);
+            if(emailTemplate1.message.equals(message)){
+                emailTemplate = emailTemplate1;
+                break;
+            }
         }
-        Queue <Mail> temporarySpace = new LinkedList<>();
-        while(!this.inbox.isEmpty() && !this.inbox.peek().message.equals(message)){
-            temporarySpace.offer(this.inbox.poll());
+        if(emailTemplate != null){
+            Inbox.remove(emailTemplate);
+            Trash.add(emailTemplate);
         }
-        this.trashMail.offer(this.inbox.poll());
-        while(!this.inbox.isEmpty()){
-            temporarySpace.offer(this.inbox.poll());
-        }
-        this.inbox = new LinkedList<>(temporarySpace);
-
     }
 
     public String findLatestMessage(){
         // If the inbox is empty, return null
-        if(this.inbox.size() == 0)return null;
         // Else, return the message of the latest mail present in the inbox
-        int size = this.inbox.size();
-        for(int i =0; i < size-1; i++){
-            this.inbox.offer(this.inbox.poll());
+        if(Inbox.isEmpty()){
+            return null;
         }
-        String message = this.inbox.peek().message;
-        this.inbox.offer(this.inbox.poll());
-        return message;
+
+
+        Emailformate emailTemplate = Inbox.get(Inbox.size() - 1);
+        return emailTemplate.message;
     }
 
     public String findOldestMessage(){
         // If the inbox is empty, return null
-        if(this.inbox.size() == 0)return null;
         // Else, return the message of the oldest mail present in the inbox
-        return this.inbox.peek().message;
+
+        if(Inbox.isEmpty()){
+            return null;
+        }
+
+        Emailformate emailTemplate = Inbox.get(0);
+        return emailTemplate.message;
     }
 
     public int findMailsBetweenDates(Date start, Date end){
         //find number of mails in the inbox which are received between given dates
         //It is guaranteed that start date <= end date
-        int countMail = 0;
-        int size = this.inbox.size();
-        if(size == 0)return 0;
-        for(int i =0; i < size; i++){
-            assert this.inbox.peek() != null;
-            if(this.inbox.peek().date.equals(start)
-                    || (this.inbox.peek().date.after(start) && this.inbox.peek().date.before(end))
-                    || this.inbox.peek().date.equals(end))
-                countMail++;
-            this.inbox.offer(this.inbox.poll());
+        int count = 0;
+        for(int i=0; i<Inbox.size(); i++){
+            Emailformate emailTemplate = Inbox.get(i);
+            //Compare the Date
+            if((emailTemplate.date.compareTo(start) >= 0) && (emailTemplate.date.compareTo(end) <= 0)){
+                count++;
+            }
         }
-        return countMail;
+        return count;
     }
 
     public int getInboxSize(){
         // Return number of mails in inbox
-        return this.inbox.size();
+        return Inbox.size();
     }
 
     public int getTrashSize(){
         // Return number of mails in Trash
-        return this.trashMail.size();
+        return Trash.size();
     }
 
     public void emptyTrash(){
         // clear all mails in the trash
-        this.trashMail.clear();
+        Trash.clear();
     }
 
     public int getInboxCapacity() {
         // Return the maximum number of mails that can be stored in the inbox
-        return this.inboxCapacity;
+        return inboxCapacity;
     }
 }
