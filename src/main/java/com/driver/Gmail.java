@@ -10,9 +10,6 @@ class Emailformate {
     String sender;
     String message;
 
-    //    public EmailTemplate(){
-//
-//    }
     public Emailformate(Date date, String sender, String message) {
         this.date = date;
         this.sender = sender;
